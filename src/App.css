@@ -184,55 +184,7 @@ h1 {
 
 .todo-actions {
   display: flex;
-  gap: 10px;
-}
-
-.edit-btn,
-.delete-btn,
-.save-btn,
-.cancel-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.edit-btn {
-  color: #2196f3;
-}
-
-.edit-btn:hover {
-  background: #e3f2fd;
-  transform: scale(1.1);
-}
-
-.delete-btn {
-  color: #f44336;
-}
-
-.delete-btn:hover {
-  background: #ffebee;
-  transform: scale(1.1);
-}
-
-.save-btn {
-  color: #4caf50;
-}
-
-.save-btn:hover {
-  background: #e8f5e9;
-}
-
-.cancel-btn {
-  color: #999;
-}
-
-.cancel-btn:hover {
-  background: #f5f5f5;
+  gap: 8px;
 }
 
 .edit-input {
@@ -304,4 +256,23 @@ h1 {
 
 .todo-list::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Button Component Styles */
+.btn {
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

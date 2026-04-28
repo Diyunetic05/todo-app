@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Trash2, CheckCircle, Circle, Edit2, Save, X } from 'lucide-react';
+import Button from './Button';
 
 interface Todo {
     id: number;
@@ -41,10 +42,8 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
 
     return (
         <div className={`todo-item ${todo.completed ? 'completed' : ''}`}>
-            <button
-                onClick={() => onToggle(todo.id)}
-                className="toggle-btn"
-            >
+            {/* Toggle button - special case, not using Button component */}
+            <button onClick={() => onToggle(todo.id)} className="toggle-btn">
                 {todo.completed ? <CheckCircle size={22} /> : <Circle size={22} />}
             </button>
 
@@ -58,29 +57,53 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
                     autoFocus
                 />
             ) : (
-                <span className="todo-text">
-                    {todo.text}
-                </span>
+                <span className="todo-text">{todo.text}</span>
             )}
 
             <div className="todo-actions">
                 {isEditing ? (
                     <>
-                        <button onClick={handleSaveEdit} className="save-btn">
-                            <Save size={18} />
-                        </button>
-                        <button onClick={handleCancelEdit} className="cancel-btn">
-                            <X size={18} />
-                        </button>
+                        {/* Save Button - works as SAVE */}
+                        <Button
+                            onClick={handleSaveEdit}
+                            variant="success"
+                            size="small"
+                            icon={<Save size={16} />}
+                        >
+                            Save
+                        </Button>
+
+                        {/* Cancel Button - works as CANCEL */}
+                        <Button
+                            onClick={handleCancelEdit}
+                            variant="outline"
+                            size="small"
+                            icon={<X size={16} />}
+                        >
+                            Cancel
+                        </Button>
                     </>
                 ) : (
                     <>
-                        <button onClick={() => setIsEditing(true)} className="edit-btn">
-                            <Edit2 size={18} />
-                        </button>
-                        <button onClick={() => onDelete(todo.id)} className="delete-btn">
-                            <Trash2 size={18} />
-                        </button>
+                        {/* Edit Button - works as EDIT */}
+                        <Button
+                            onClick={() => setIsEditing(true)}
+                            variant="warning"
+                            size="small"
+                            icon={<Edit2 size={16} />}
+                        >
+                            Edit
+                        </Button>
+
+                        {/* Delete Button - works as DELETE */}
+                        <Button
+                            onClick={() => onDelete(todo.id)}
+                            variant="danger"
+                            size="small"
+                            icon={<Trash2 size={16} />}
+                        >
+                            Delete
+                        </Button>
                     </>
                 )}
             </div>

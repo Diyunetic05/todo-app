@@ -1,3 +1,5 @@
+import Button from './Button';
+
 interface TodoFilterProps {
     filter: 'all' | 'active' | 'completed';
     onFilterChange: (filter: 'all' | 'active' | 'completed') => void;
@@ -7,24 +9,27 @@ interface TodoFilterProps {
 function TodoFilter({ filter, onFilterChange, stats }: TodoFilterProps) {
     return (
         <div className="filter-section">
-            <button
+            <Button
                 onClick={() => onFilterChange('all')}
-                className={`filter-btn ${filter === 'all' ? 'active-all' : ''}`}
+                variant={filter === 'all' ? 'primary' : 'outline'}
+                size="medium"
             >
                 All ({stats.total})
-            </button>
-            <button
+            </Button>
+            <Button
                 onClick={() => onFilterChange('active')}
-                className={`filter-btn ${filter === 'active' ? 'active-active' : ''}`}
+                variant={filter === 'active' ? 'warning' : 'outline'}
+                size="medium"
             >
                 Active ({stats.active})
-            </button>
-            <button
+            </Button>
+            <Button
                 onClick={() => onFilterChange('completed')}
-                className={`filter-btn ${filter === 'completed' ? 'active-completed' : ''}`}
+                variant={filter === 'completed' ? 'success' : 'outline'}
+                size="medium"
             >
                 Completed ({stats.completed})
-            </button>
+            </Button>
         </div>
     );
 }

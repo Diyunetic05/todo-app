@@ -2,6 +2,7 @@ import { useState } from 'react';
 import TodoInput from './components/TodoInput';
 import TodoList from './components/TodoList';
 import TodoFilter from './components/TodoFilter';
+import Button from './components/Button';
 import './App.css';
 
 // TypeScript Interface for a Todo item
@@ -104,16 +105,15 @@ function App() {
           onEdit={handleEditTodo}
         />
 
-        {/* Footer */}
         {todos.length > 0 && (
           <div className="footer">
             <div className="stats">
               📊 {stats.active} task{stats.active !== 1 ? 's' : ''} remaining
             </div>
             {stats.completed > 0 && (
-              <button onClick={handleClearCompleted} className="clear-btn">
+              <Button onClick={handleClearCompleted} variant="danger" size="medium">
                 Clear Completed ({stats.completed})
-              </button>
+              </Button>
             )}
           </div>
         )}

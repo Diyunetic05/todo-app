@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import Button from './Button';
 
 interface TodoInputProps {
     onAddTodo: (text: string) => void;
@@ -33,10 +34,9 @@ function TodoInput({ onAddTodo }: TodoInputProps) {
                 placeholder="What needs to be done?"
                 className="todo-input"
             />
-            <button onClick={handleAdd} className="btn-add">
-                <Plus size={18} />
+            <Button onClick={handleAdd} variant="primary" size="medium" icon={<Plus size={18} />}>
                 Add Task
-            </button>
+            </Button>
         </div>
     );
 }
