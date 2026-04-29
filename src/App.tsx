@@ -1,41 +1,67 @@
 import { useState } from 'react';
-import TodoInput from './components/TodoInput';
-import TodoList from './components/TodoList';
-import TodoFilter from './components/TodoFilter';
-import Button from './components/Button';
+import useLocalStorage from './hooks/useLocalStorage';
+import useFetch from './hooks/useFetch';
 import './App.css';
 
-// TypeScript Interface for a Todo item
 interface Todo {
   id: number;
   text: string;
   completed: boolean;
   createdAt: Date;
+  fromAPI?: boolean;
+}
+
+interface ApiTodo {
+  id: number;
+  title: string;
+  completed: boolean;
+  userId: number;
 }
 
 function App() {
-  // State for todos list (In-memory storage)
-  const [todos, setTodos] = useState<Todo[]>([
-    { id: 1, text: 'Learn React', completed: false, createdAt: new Date() },
-    { id: 2, text: 'Build a Todo App', completed: false, createdAt: new Date() },
-    { id: 3, text: 'Master TypeScript', completed: false, createdAt: new Date() },
-  ]);
+  // ========== USING CUSTOM HOOKS ==========
 
+  // 1. useLocalStorage - Start with empty todos (or clear them)
+  const [todos, setTodos, clearTodos] = useLocalStorage<Todo[]>('todos', []);
+
+  // 2. useFetch - Fetch sample todos from API
+  const {
+    data: apiTodos,
+    loading: apiLoading,
+    error: apiError,
+    refetch: refetchApi
+  } = useFetch<ApiTodo[]>('https://jsonplaceholder.typicode.com/todos?_limit=5');
 
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [inputValue, setInputValue] = useState<string>('');
+  const [showApiSection, setShowApiSection] = useState<boolean>(true);
 
-  // Callback: Add a new todo (passed down to TodoInput)
-  const handleAddTodo = (text: string) => {
+  // Add default todos if empty
+  const addDefaultTodos = () => {
+    const defaultTodos: Todo[] = [
+      { id: 101, text: 'Learn React', completed: false, createdAt: new Date() },
+      { id: 102, text: 'Build a Todo App', completed: false, createdAt: new Date() },
+      { id: 103, text: 'Master TypeScript', completed: false, createdAt: new Date() },
+    ];
+    setTodos(defaultTodos);
+  };
+
+  // Add a new todo
+  const handleAddTodo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputValue.trim() === '') return;
+
     const newTodo: Todo = {
       id: Date.now(),
-      text: text,
+      text: inputValue,
       completed: false,
       createdAt: new Date(),
     };
     setTodos([...todos, newTodo]);
+    setInputValue('');
   };
 
-  // Callback: Toggle todo completion (passed down to TodoItem)
+  // Toggle todo completion
   const handleToggleTodo = (id: number) => {
     setTodos(
       todos.map(todo =>
@@ -44,14 +70,14 @@ function App() {
     );
   };
 
-  // Callback: Delete a todo (passed down to TodoItem)
+  // Delete a todo
   const handleDeleteTodo = (id: number) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       setTodos(todos.filter(todo => todo.id !== id));
     }
   };
 
-  // Callback: Edit a todo (passed down to TodoItem)
+  // Edit a todo
   const handleEditTodo = (id: number, newText: string) => {
     setTodos(
       todos.map(todo =>
@@ -60,7 +86,14 @@ function App() {
     );
   };
 
-  // Callback: Clear all completed todos
+  // Clear all todos
+  const handleClearAll = () => {
+    if (window.confirm('⚠️ Delete ALL todos? This cannot be undone!')) {
+      clearTodos();
+    }
+  };
+
+  // Clear completed todos
   const handleClearCompleted = () => {
     const completedCount = todos.filter(t => t.completed).length;
     if (completedCount > 0 && window.confirm(`Delete ${completedCount} completed tasks?`)) {
@@ -68,55 +101,218 @@ function App() {
     }
   };
 
-  // Get statistics
-  const getStats = () => {
-    const total = todos.length;
-    const completed = todos.filter(todo => todo.completed).length;
-    const active = total - completed;
-    return { total, completed, active };
+  // Import todos from API
+  const handleImportFromAPI = () => {
+    if (apiTodos && apiTodos.length > 0) {
+      const newTodos: Todo[] = apiTodos.map(apiTodo => ({
+        id: apiTodo.id,
+        text: apiTodo.title,
+        completed: apiTodo.completed,
+        createdAt: new Date(),
+        fromAPI: true
+      }));
+
+      const existingIds = new Set(todos.map(t => t.id));
+      const uniqueNewTodos = newTodos.filter(todo => !existingIds.has(todo.id));
+
+      if (uniqueNewTodos.length > 0) {
+        setTodos([...todos, ...uniqueNewTodos]);
+        alert(`✅ Imported ${uniqueNewTodos.length} todos from API!`);
+      } else {
+        alert('All API todos already exist in your list!');
+      }
+    }
   };
 
-  const stats = getStats();
+  // Filter todos
+  const filteredTodos = todos.filter(todo => {
+    if (filter === 'active') return !todo.completed;
+    if (filter === 'completed') return todo.completed;
+    return true;
+  });
+
+  const stats = {
+    total: todos.length,
+    completed: todos.filter(t => t.completed).length,
+    active: todos.filter(t => !t.completed).length
+  };
+
+  const formatDate = (date: Date) => {
+    const d = new Date(date);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  };
 
   return (
     <div className="todo-container">
       <div className="todo-card">
         <h1>
           <span>📝</span>
-          Todo App
+          Todo App with Custom Hooks
         </h1>
 
-        {/* TodoInput Component - receives onAddTodo callback */}
-        <TodoInput onAddTodo={handleAddTodo} />
+        {/* Custom Hooks Badges */}
+        <div className="hooks-badge">
+          <span className="badge">🪝 useLocalStorage</span>
+          <span className="badge">📡 useFetch</span>
+          <span className="badge">💾 Persists after refresh</span>
+        </div>
 
-        {/* TodoFilter Component - receives filter and onFilterChange */}
-        <TodoFilter
-          filter={filter}
-          onFilterChange={setFilter}
-          stats={stats}
-        />
+        {/* Add Default Todos Button (if empty) */}
+        {todos.length === 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <button
+              onClick={addDefaultTodos}
+              style={{
+                width: '100%',
+                padding: '10px',
+                background: '#e8e8e8',
+                border: '1px solid #ccc',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              📋 Add Sample Todos (Learn React, Build Todo App, Master TypeScript)
+            </button>
+          </div>
+        )}
 
-        {/* TodoList Component - receives todos and callbacks */}
-        <TodoList
-          todos={todos}
-          filter={filter}
-          onToggle={handleToggleTodo}
-          onDelete={handleDeleteTodo}
-          onEdit={handleEditTodo}
-        />
+        {/* API Fetch Section */}
+        {showApiSection && (
+          <div className="api-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>📡 Fetch Sample Todos from API</h3>
+              <button
+                onClick={() => setShowApiSection(false)}
+                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#999' }}
+              >
+                ✖
+              </button>
+            </div>
+            <div className="api-buttons">
+              <button onClick={refetchApi} className="api-refetch-btn" disabled={apiLoading}>
+                🔄 {apiLoading ? 'Loading...' : 'Refetch'}
+              </button>
+              <button onClick={handleImportFromAPI} className="api-import-btn" disabled={apiLoading || !apiTodos}>
+                📥 Import to My Todos
+              </button>
+            </div>
 
+            {apiLoading && <p className="api-loading">⏳ Loading todos from API...</p>}
+            {apiError && <p className="api-error">❌ Error: {apiError}</p>}
+
+            {apiTodos && !apiLoading && (
+              <div className="api-preview">
+                <h4>API Preview (Click Import to add)</h4>
+                <ul>
+                  {apiTodos.map(todo => (
+                    <li key={todo.id}>
+                      <span>{todo.title.length > 50 ? todo.title.substring(0, 50) + '...' : todo.title}</span>
+                      <span className={todo.completed ? 'api-completed' : 'api-pending'}>
+                        {todo.completed ? '✓ Done' : '○ Pending'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Add Todo Form */}
+        <form onSubmit={handleAddTodo} className="add-todo">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="What needs to be done?"
+          />
+          <button type="submit">+ Add Task</button>
+        </form>
+
+        {/* Filter Buttons */}
+        <div className="filters">
+          <button onClick={() => setFilter('all')} className={filter === 'all' ? 'active' : ''}>
+            All ({stats.total})
+          </button>
+          <button onClick={() => setFilter('active')} className={filter === 'active' ? 'active' : ''}>
+            Active ({stats.active})
+          </button>
+          <button onClick={() => setFilter('completed')} className={filter === 'completed' ? 'active' : ''}>
+            Completed ({stats.completed})
+          </button>
+        </div>
+
+        {/* Todo List */}
+        <div className="todo-list">
+          {filteredTodos.length === 0 ? (
+            <p className="empty-message">
+              {todos.length === 0
+                ? "✨ No todos! Add a task above or import from API"
+                : "No todos match the selected filter"}
+            </p>
+          ) : (
+            filteredTodos.map(todo => (
+              <div key={todo.id} className={`todo-item ${todo.completed ? 'completed' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={() => handleToggleTodo(todo.id)}
+                />
+                <span className="todo-text">{todo.text}</span>
+                {todo.fromAPI && <span className="api-badge">API</span>}
+                <span className="todo-date">{formatDate(todo.createdAt)}</span>
+                <button
+                  className="edit-btn"
+                  onClick={() => {
+                    const newText = prompt('Edit todo:', todo.text);
+                    if (newText && newText.trim()) handleEditTodo(todo.id, newText);
+                  }}
+                >
+                  ✏️
+                </button>
+                <button className="delete-btn" onClick={() => handleDeleteTodo(todo.id)}>
+                  🗑️
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
         {todos.length > 0 && (
           <div className="footer">
             <div className="stats">
               📊 {stats.active} task{stats.active !== 1 ? 's' : ''} remaining
+              <span className="persist-info">💾 Saved in localStorage</span>
             </div>
-            {stats.completed > 0 && (
-              <Button onClick={handleClearCompleted} variant="danger" size="medium">
-                Clear Completed ({stats.completed})
-              </Button>
-            )}
+            <div className="footer-buttons">
+              {stats.completed > 0 && (
+                <button onClick={handleClearCompleted} className="clear-completed-btn">
+                  Clear Completed ({stats.completed})
+                </button>
+              )}
+              <button onClick={handleClearAll} className="clear-all-btn">
+                🗑️ Clear All
+              </button>
+            </div>
           </div>
         )}
+
+        {/* localStorage Info */}
+        <div className="localstorage-footer">
+          <details>
+            <summary>🔍 View localStorage Data</summary>
+            <div className="localstorage-info">
+              <p>✅ Your todos are saved in browser's localStorage!</p>
+              <p>📀 Key: <code>'todos'</code></p>
+              <p>🔧 To view: F12 → Application → Local Storage</p>
+              <button onClick={() => console.log('Current todos:', todos)}>
+                📝 Log Todos to Console
+              </button>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   );

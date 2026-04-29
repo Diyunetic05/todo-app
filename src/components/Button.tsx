@@ -1,89 +1,46 @@
-import { ReactNode } from 'react';
+import React from 'react';
 
 interface ButtonProps {
     onClick: () => void;
-    children: ReactNode;
-    variant?: 'primary' | 'danger' | 'success' | 'warning' | 'outline';
+    children: React.ReactNode;
+    variant?: 'primary' | 'danger' | 'secondary';
     size?: 'small' | 'medium' | 'large';
-    disabled?: boolean;
-    icon?: ReactNode;
-    type?: 'button' | 'submit' | 'reset';
 }
 
-function Button({
+const Button: React.FC<ButtonProps> = ({
     onClick,
     children,
     variant = 'primary',
-    size = 'medium',
-    disabled = false,
-    icon,
-    type = 'button'
-}: ButtonProps) {
+    size = 'medium'
+}) => {
+    const variants = {
+        primary: '#667eea',
+        danger: '#dc3545',
+        secondary: '#6c757d'
+    };
 
-    const getButtonStyle = (): React.CSSProperties => {
-        const style: React.CSSProperties = {
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            borderRadius: '8px',
-            cursor: disabled ? 'not-allowed' : 'pointer',
-            opacity: disabled ? 0.6 : 1,
-            transition: 'all 0.3s ease',
-            border: 'none',
-            fontWeight: '600',
-            fontFamily: 'inherit'
-        };
-
-        // Size styles
-        if (size === 'small') {
-            style.padding = '6px 12px';
-            style.fontSize = '13px';
-        } else if (size === 'large') {
-            style.padding = '12px 24px';
-            style.fontSize = '16px';
-        } else {
-            style.padding = '8px 16px';
-            style.fontSize = '14px';
-        }
-
-        // Variant styles
-        switch (variant) {
-            case 'danger':
-                style.backgroundColor = '#f44336';
-                style.color = 'white';
-                break;
-            case 'success':
-                style.backgroundColor = '#4caf50';
-                style.color = 'white';
-                break;
-            case 'warning':
-                style.backgroundColor = '#ff9800';
-                style.color = 'white';
-                break;
-            case 'outline':
-                style.backgroundColor = 'transparent';
-                style.color = '#667eea';
-                style.border = '2px solid #667eea';
-                break;
-            default:
-                style.backgroundColor = '#667eea';
-                style.color = 'white';
-        }
-
-        return style;
+    const sizes = {
+        small: { padding: '4px 12px', fontSize: '12px' },
+        medium: { padding: '8px 16px', fontSize: '14px' },
+        large: { padding: '12px 24px', fontSize: '16px' }
     };
 
     return (
         <button
-            type={type}
             onClick={onClick}
-            disabled={disabled}
-            style={getButtonStyle()}
+            style={{
+                background: variants[variant],
+                ...sizes[size],
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+            }}
         >
-            {icon && <span>{icon}</span>}
             {children}
         </button>
     );
-}
+};
 
 export default Button;
