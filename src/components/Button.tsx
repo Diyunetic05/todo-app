@@ -3,7 +3,7 @@ import React from 'react';
 interface ButtonProps {
     onClick: () => void;
     children: React.ReactNode;
-    variant?: 'primary' | 'danger' | 'secondary';
+    variant?: 'primary' | 'danger' | 'secondary' | 'outline' | 'warning' | 'success';
     size?: 'small' | 'medium' | 'large';
 }
 
@@ -14,9 +14,12 @@ const Button: React.FC<ButtonProps> = ({
     size = 'medium'
 }) => {
     const variants = {
-        primary: '#667eea',
-        danger: '#dc3545',
-        secondary: '#6c757d'
+        primary: { background: '#4a90e2', color: 'white', border: 'none' },
+        danger: { background: '#dc3545', color: 'white', border: 'none' },
+        secondary: { background: '#6c757d', color: 'white', border: 'none' },
+        outline: { background: 'white', color: '#4a90e2', border: '1px solid #4a90e2' },
+        warning: { background: '#ffc107', color: '#333', border: 'none' },
+        success: { background: '#28a745', color: 'white', border: 'none' }
     };
 
     const sizes = {
@@ -25,17 +28,19 @@ const Button: React.FC<ButtonProps> = ({
         large: { padding: '12px 24px', fontSize: '16px' }
     };
 
+    const variantStyle = variants[variant];
+    const sizeStyle = sizes[size];
+
     return (
         <button
             onClick={onClick}
             style={{
-                background: variants[variant],
-                ...sizes[size],
-                border: 'none',
-                borderRadius: '8px',
-                color: 'white',
+                ...variantStyle,
+                ...sizeStyle,
+                borderRadius: '6px',
                 cursor: 'pointer',
-                transition: 'all 0.3s'
+                transition: 'all 0.2s',
+                fontWeight: '500'
             }}
         >
             {children}

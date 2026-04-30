@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import useFetch from './hooks/useFetch';
+import useDebounce from './hooks/useDebounce';
 import './App.css';
 
 interface Todo {
@@ -31,6 +32,10 @@ function App() {
     error: apiError,
     refetch: refetchApi
   } = useFetch<ApiTodo[]>('https://jsonplaceholder.typicode.com/todos?_limit=5');
+
+  // 3. useDebounce - For search functionality
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [inputValue, setInputValue] = useState<string>('');
@@ -105,15 +110,15 @@ function App() {
   const handleImportFromAPI = () => {
     if (apiTodos && apiTodos.length > 0) {
       const newTodos: Todo[] = apiTodos.map(apiTodo => ({
-        id: apiTodo.id,
+        id: apiTodo.id + 1000,
         text: apiTodo.title,
         completed: apiTodo.completed,
         createdAt: new Date(),
         fromAPI: true
       }));
 
-      const existingIds = new Set(todos.map(t => t.id));
-      const uniqueNewTodos = newTodos.filter(todo => !existingIds.has(todo.id));
+      const existingTexts = new Set(todos.map(t => t.text));
+      const uniqueNewTodos = newTodos.filter(todo => !existingTexts.has(todo.text));
 
       if (uniqueNewTodos.length > 0) {
         setTodos([...todos, ...uniqueNewTodos]);
@@ -124,17 +129,23 @@ function App() {
     }
   };
 
-  // Filter todos
-  const filteredTodos = todos.filter(todo => {
-    if (filter === 'active') return !todo.completed;
-    if (filter === 'completed') return todo.completed;
-    return true;
-  });
+  // Filter and Search todos (using debounced search term)
+  const filteredTodos = todos
+    .filter(todo => {
+      if (filter === 'active') return !todo.completed;
+      if (filter === 'completed') return todo.completed;
+      return true;
+    })
+    .filter(todo => {
+      if (debouncedSearchTerm === '') return true;
+      return todo.text.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+    });
 
   const stats = {
     total: todos.length,
     completed: todos.filter(t => t.completed).length,
-    active: todos.filter(t => !t.completed).length
+    active: todos.filter(t => !t.completed).length,
+    searchResults: filteredTodos.length
   };
 
   const formatDate = (date: Date) => {
@@ -154,7 +165,32 @@ function App() {
         <div className="hooks-badge">
           <span className="badge">🪝 useLocalStorage</span>
           <span className="badge">📡 useFetch</span>
+          <span className="badge">🕐 useDebounce</span>
           <span className="badge">💾 Persists after refresh</span>
+        </div>
+
+        {/* ========== SEARCH BAR - AT THE TOP (as shown in image) ========== */}
+        <div className="search-section">
+          <div className="search-input-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search todos... (typing waits 500ms)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button className="clear-search" onClick={() => setSearchTerm('')}>
+                ✖
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <div className="search-info">
+              🔍 Found {stats.searchResults} result{stats.searchResults !== 1 ? 's' : ''} for "{searchTerm}"
+            </div>
+          )}
         </div>
 
         {/* Add Default Todos Button (if empty) */}
@@ -177,7 +213,7 @@ function App() {
           </div>
         )}
 
-        {/* API Fetch Section */}
+        {/* ========== API FETCH SECTION ========== */}
         {showApiSection && (
           <div className="api-section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -219,7 +255,7 @@ function App() {
           </div>
         )}
 
-        {/* Add Todo Form */}
+        {/* ========== ADD TODO FORM ========== */}
         <form onSubmit={handleAddTodo} className="add-todo">
           <input
             type="text"
@@ -230,7 +266,7 @@ function App() {
           <button type="submit">+ Add Task</button>
         </form>
 
-        {/* Filter Buttons */}
+        {/* ========== FILTER BUTTONS ========== */}
         <div className="filters">
           <button onClick={() => setFilter('all')} className={filter === 'all' ? 'active' : ''}>
             All ({stats.total})
@@ -243,13 +279,18 @@ function App() {
           </button>
         </div>
 
-        {/* Todo List */}
+        {/* ========== TODO LIST HEADER ========== */}
         <div className="todo-list">
+          <h4 style={{ fontSize: '13px', color: '#666', marginBottom: '10px', borderBottom: '1px solid #e5e5e5', paddingBottom: '8px' }}>
+            📋 My Tasks ({filteredTodos.length})
+          </h4>
           {filteredTodos.length === 0 ? (
             <p className="empty-message">
               {todos.length === 0
                 ? "✨ No todos! Add a task above or import from API"
-                : "No todos match the selected filter"}
+                : searchTerm
+                  ? `No tasks match "${searchTerm}"`
+                  : "No todos match the selected filter"}
             </p>
           ) : (
             filteredTodos.map(todo => (
@@ -279,7 +320,7 @@ function App() {
           )}
         </div>
 
-        {/* Footer */}
+        {/* ========== FOOTER ========== */}
         {todos.length > 0 && (
           <div className="footer">
             <div className="stats">
@@ -299,7 +340,7 @@ function App() {
           </div>
         )}
 
-        {/* localStorage Info */}
+        {/* ========== LOCALSTORAGE INFO ========== */}
         <div className="localstorage-footer">
           <details>
             <summary>🔍 View localStorage Data</summary>
